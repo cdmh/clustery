@@ -1,12 +1,12 @@
 #include <boost/asio.hpp>
 
-class chat_message
+class message
 {
   private:
     enum { max_body_length = 1024 };
 
   public:
-    chat_message(std::size_t length=0)
+    message(std::size_t length=0)
       : body_length_(length)      
     {
         header_.resize(4);
@@ -15,16 +15,16 @@ class chat_message
             body_length_ = max_body_length;
     }
 
-    chat_message(std::string const &msg) : chat_message(msg.length())
+    message(std::string const &msg) : message(msg.length())
     {
-        std::memcpy(body(), msg.c_str(), body_length_);
+        std::memcpy(body_, msg.c_str(), body_length_);
         encode_header();
     }
 
     boost::asio::mutable_buffers_1 body_buffer()
     {
         decode_header();
-        return boost::asio::buffer(body(), body_length_);
+        return boost::asio::buffer(body_, body_length_);
     }
 
     boost::asio::mutable_buffers_1 header_buffer()
@@ -32,9 +32,9 @@ class chat_message
         return boost::asio::buffer(header_);
     }
 
-    char *body()
+    char const *body() const
     {
-        return buffer_;
+        return body_;
     }
 
     std::size_t body_length() const
@@ -74,6 +74,8 @@ class chat_message
 
   private:
     std::vector<char> header_;
-    char              buffer_[max_body_length];
+    char              body_[max_body_length];
     std::size_t       body_length_;
 };
+
+typedef std::deque<message> message_queue_t;
