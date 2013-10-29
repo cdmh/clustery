@@ -7,27 +7,14 @@
 #include <boost/lexical_cast.hpp>
 #include "message.h"
 
-using boost::asio::ip::tcp;
-
-class comms_client
+class comms_client : public comms
 {
   public:
     comms_client(boost::asio::io_service &io_service, tcp::resolver::iterator endpoint_iterator)
-      : io_service_(io_service),
-        socket_(io_service)
+      : comms(tcp::socket(io_service)),
+        io_service_(io_service)
     {
-        do_connect(endpoint_iterator);
-    }
-
-    void write(const message &msg)
-    {
-        io_service_.post(
-            [this, msg]() {
-                bool write_in_progress = !write_msgs_.empty();
-                write_msgs_.push_back(msg);
-                if (!write_in_progress)
-                    do_write();
-            });
+        connect(endpoint_iterator);
     }
 
     void close()
@@ -36,8 +23,19 @@ class comms_client
         io_service_.post([this]() { socket_.close(); });
     }
 
+    void write(message const &msg)
+    {
+        io_service_.post(
+            [this, msg]() {
+                bool write_in_progress = !write_msgs_.empty();
+                write_msgs_.push_back(msg);
+                if (!write_in_progress)
+                    write();
+            });
+    }
+
   private:
-    void do_connect(tcp::resolver::iterator endpoint_iterator)
+    void connect(tcp::resolver::iterator endpoint_iterator)
     {
         boost::asio::async_connect(
             socket_,
@@ -45,78 +43,30 @@ class comms_client
             [this](boost::system::error_code ec, tcp::resolver::iterator)
             {
                 if (!ec)
-                    do_read_header();
+                    read();
             });
     }
 
-    void do_read_header() // !!!duplicated function
+    void read()
     {
-        boost::asio::async_read(
-            socket_,
-            read_msg_.header_buffer(),
-            [this](boost::system::error_code ec, std::size_t length)
-            {
-                if (!ec)
-                    do_read_body();
-                else
-                    socket_.close();
-            });
+        perform_read(
+            [this](){
+                std::cout.write(read_msg_.body(), read_msg_.body_length());
+                std::cout << "\n";
+                read();
+            },
+            [this]() { socket_.close(); });
     }
 
-    void do_read_body()   //!!! duplicate function
+    void write()
     {
-        boost::asio::async_read(
-            socket_,
-            read_msg_.body_buffer(),
-            [this](boost::system::error_code ec, std::size_t /*length*/)
-            {
-                if (!ec)
-                {
-                    std::cout.write(read_msg_.body(), read_msg_.body_length());
-                    std::cout << "\n";
-                    do_read_header();
-                }
-                else
-                    socket_.close();
-            });
-    }
-
-    void do_write()       //!!! duplicate function
-    {
-        boost::asio::async_write(
-            socket_, write_msgs_.front().header_buffer(),
-            [this](boost::system::error_code ec, std::size_t /*length*/)
-            {
-                if (!ec)
-                    do_body_write();
-                else
-                    socket_.close();
-            });
-    }
-
-  private:
-    void do_body_write() //!!! duplicate function
-    {
-        boost::asio::async_write(
-            socket_, write_msgs_.front().body_buffer(),
-            [this](boost::system::error_code ec, std::size_t /*length*/)
-            {
-                if (!ec)
-                {
-                    write_msgs_.pop_front();
-                    if (!write_msgs_.empty())
-                        do_write();
-                }
-                else
-                    socket_.close();
-            });
+        perform_write(
+            [this]() { write(); },
+            [this]() { socket_.close(); });
     }
 
   private:
     boost::asio::io_service &io_service_;
-    tcp::socket              socket_;
-    message                  read_msg_;
-    message_queue_t          write_msgs_;
 };
 
 

@@ -12,14 +12,14 @@
 
 using boost::asio::ip::tcp;
 
-class cluster_participant
+class cluster_member
 {
 public:
-  virtual ~cluster_participant() {}
-  virtual void deliver(const message &msg) = 0;
+  virtual ~cluster_member() {}
+  virtual void deliver(message const &msg) = 0;
 };
 
-typedef std::shared_ptr<cluster_participant> cluster_participant_ptr;
+typedef std::shared_ptr<cluster_member> cluster_member_ptr;
 
 
 
@@ -33,22 +33,24 @@ class cluster
     {
     }
 
-    void join(cluster_participant_ptr participant)
+    void join(cluster_member_ptr participant)
     {
-        participants_.insert(participant);
+        members_.insert(participant);
+        std::clog << "\nParticipant joined. Now " << members_.size();
         for (auto msg : recent_msgs_)
             participant->deliver(msg);
     }
 
-    void leave(cluster_participant_ptr participant)
+    void leave(cluster_member_ptr participant)
     {
-        participants_.erase(participant);
+        members_.erase(participant);
+        std::clog << "\nParticipant left. Now " << members_.size();
     }
 
-    void deliver(const message &msg)
+    void deliver(message const &msg)
     {
-        std::cout << "\nRoom " << cluster_number_ << ", received message " << ++message_count_ << "\n--> ";
-        std::cout.write(msg.body(), msg.body_length());
+        std::clog << "\nRoom " << cluster_number_ << ", received message " << ++message_count_ << "\n--> ";
+        std::clog.write(msg.body(), msg.body_length());
 
         // store the message for sending to new servers
         // as they join the cluster
@@ -56,13 +58,13 @@ class cluster
         while (recent_msgs_.size() > recent_msg_count_)
             recent_msgs_.pop_front();
 
-        for (auto participant: participants_)
+        for (auto participant: members_)
             participant->deliver(msg);
     }
 
   private:
     int const                         recent_msg_count_;
-    std::set<cluster_participant_ptr> participants_;
+    std::set<cluster_member_ptr>      members_;
     message_queue_t                   recent_msgs_;
     std::size_t                       message_count_;
     unsigned long                     cluster_number_;
@@ -73,98 +75,51 @@ std::atomic<unsigned long> cluster::cluster_count_(0);
 
 
 class session
-  : public cluster_participant,
+  : public cluster_member,
+    public comms,
     public std::enable_shared_from_this<session>
 {
   public:
-    session(tcp::socket socket, cluster &room)
-      : socket_(std::move(socket)),
+    session(tcp::socket &&socket, cluster &room)
+      : comms(std::forward<tcp::socket>(socket)),
         cluster_(room)
     { }
 
     void start()
     {
         cluster_.join(shared_from_this());
-        do_read_header();
+        read();
     }
 
-    void deliver(const message &msg)
+    void deliver(message const &msg)
     {
         bool write_in_progress = !write_msgs_.empty();
         write_msgs_.push_back(msg);
         if (!write_in_progress)
-            do_write();
+            write();
     }
 
   private:
-    void do_read_header() // !!!duplicated function
+    void read()
     {
-        auto self(shared_from_this());
-        boost::asio::async_read(socket_, read_msg_.header_buffer(),
-            [this, self](boost::system::error_code ec, std::size_t /*length*/)
-            {
-                if (!ec)
-                    do_read_body();
-                else
-                    cluster_.leave(shared_from_this());
-            });
+        perform_read(
+            [this](){
+                cluster_.deliver(read_msg_);
+                read();
+            },
+            std::bind(&cluster::leave, &cluster_, shared_from_this()));
     }
 
-    void do_read_body()
+    void write()
     {
-        auto self(shared_from_this());
-
-        boost::asio::async_read(socket_, read_msg_.body_buffer(),
-            [this, self](boost::system::error_code ec, std::size_t /*length*/)
-            {
-                if (!ec)
-                {
-                    cluster_.deliver(read_msg_);
-                    do_read_header();
-                }
-                else
-                {
-                    std::cout << "Client left";
-                    cluster_.leave(shared_from_this());
-                }
-            });
+        perform_write(
+            std::bind(&session::write, this),
+            std::bind(&cluster::leave, &cluster_, shared_from_this()));
     }
 
-    void do_write() //!!! duplicate function
-    {
-        auto self(shared_from_this());
-        boost::asio::async_write(socket_, write_msgs_.front().header_buffer(),
-            [this, self](boost::system::error_code ec, std::size_t /*length*/)
-            {
-                if (!ec)
-                    do_body_write();
-                else
-                    cluster_.leave(shared_from_this());
-            });
-    }
-
-    void do_body_write() //!!! duplicate function
-    {
-        auto self(shared_from_this());
-        boost::asio::async_write(socket_, write_msgs_.front().body_buffer(),
-            [this, self](boost::system::error_code ec, std::size_t /*length*/)
-            {
-                if (!ec)
-                {
-                    write_msgs_.pop_front();
-                    if (!write_msgs_.empty())
-                        do_write();
-                }
-                else
-                    cluster_.leave(shared_from_this());
-            });
-    }
 
   private:
-    tcp::socket     socket_;
-    cluster        &cluster_;
-    message         read_msg_;
-    message_queue_t write_msgs_;
+    cluster &cluster_;
 };
 
 
@@ -176,11 +131,11 @@ class comms_server
     : acceptor_(io_service, endpoint),
       socket_(io_service)
     {
-        do_accept();
+        accept();
     }
 
   private:
-    void do_accept()
+    void accept()
     {
         acceptor_.async_accept(socket_,
             [this](boost::system::error_code ec)
@@ -188,7 +143,7 @@ class comms_server
                 if (!ec)
                     std::make_shared<session>(std::move(socket_), cluster_)->start();
 
-                do_accept();
+                accept();
             });
     }
 
