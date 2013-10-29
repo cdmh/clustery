@@ -25,7 +25,7 @@ void cluster::deliver(message const &msg)
 void cluster::join(cluster_member_ptr member)
 {
     members_.insert(member);
-    std::clog << "\nParticipant joined. Now " << members_.size();
+    std::clog << "\nServer joined. Now " << members_.size();
     for (auto msg : recent_msgs_)
         member->deliver(msg);
 }
@@ -33,7 +33,7 @@ void cluster::join(cluster_member_ptr member)
 void cluster::leave(cluster_member_ptr member)
 {
     members_.erase(member);
-    std::clog << "\nParticipant left. Now " << members_.size();
+    std::clog << "\nServer left. Now " << members_.size();
 }
 
 std::atomic<unsigned long> cluster::cluster_count_(0);

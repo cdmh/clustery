@@ -5,8 +5,8 @@ class cluster
   public:
     explicit cluster(int const recent_msg_count=100);
     void deliver(message const &msg);
-    void join(cluster_member_ptr participant);
-    void leave(cluster_member_ptr participant);
+    void join(cluster_member_ptr member);
+    void leave(cluster_member_ptr member);
 
   private:
     int const                         recent_msg_count_;
