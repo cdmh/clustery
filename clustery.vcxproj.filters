@@ -24,6 +24,12 @@
     <ClInclude Include="comms.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="server.session.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="server.cluster.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -38,5 +44,13 @@
     <ClCompile Include="client.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="server.session.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="server.cluster.inl">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
