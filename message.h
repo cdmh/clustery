@@ -12,7 +12,8 @@ class message
 
     message(std::string const &msg) : message(msg.length())
     {
-        std::memcpy(&body_[0], msg.c_str(), body_length_);
+        if (body_length_ > 0)
+            std::memcpy(&body_[0], msg.c_str(), body_length_);
         encode_header();
     }
 
@@ -29,7 +30,7 @@ class message
 
     char const *body() const
     {
-        return &body_[0];
+        return (body_.size() == 0)? "" : &body_[0];
     }
 
     std::size_t const body_length() const
