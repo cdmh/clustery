@@ -38,21 +38,18 @@ class comms_server
     cluster       cluster_;
 };
 
-void server(int *ports, int num_ports)
+
+void server(boost::asio::io_service &io_service, int *ports, int num_ports)
 {
     std::cout << "\nClustery server\n===============\nRunning ...";
     try
     {
-        boost::asio::io_service io_service;
-
-        std::list<comms_server> servers;
+        static std::list<comms_server> servers;
         for (int i=0; i < num_ports; ++i)
         {
             tcp::endpoint endpoint(tcp::v4(), ports[i]);
             servers.emplace_back(io_service, endpoint);
         }
-
-        io_service.run();
     }
     catch (std::exception &e)
     {

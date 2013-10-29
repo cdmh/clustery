@@ -6,7 +6,6 @@ class message
     message(std::size_t length=0)
       : body_length_(length)      
     {
-        header_.resize(4);
         body_.resize(body_length_);
     }
 
@@ -25,7 +24,8 @@ class message
 
     boost::asio::mutable_buffers_1 header_buffer()
     {
-        return boost::asio::buffer(header_);
+        static_assert(sizeof(header_[0]) == 1, "header should be bytes");
+        return boost::asio::buffer(header_, sizeof(header_));
     }
 
     char const *body() const
@@ -42,8 +42,8 @@ class message
     bool const decode_header()
     {
         body_length_ = 0;
-        for (auto ch : header_)
-            body_length_ = (body_length_ * 10) + (ch-'0');
+        for (int loop=0; loop<sizeof(header_); ++loop)
+            body_length_ = (body_length_ * 10) + (header_[loop] - '0');
 
         if (body_length_ > body_.size())
             body_.resize(body_length_);
@@ -52,15 +52,15 @@ class message
 
     void encode_header()
     {
-        auto it = header_.rbegin();
-        for (std::size_t length=body_length_; length!=0; length/=10, ++it)
-            *it = (length%10) + '0';
-        for (; it!=header_.rend(); ++it)
-            *it = '0';
+        char *p = header_ + sizeof(header_) - 1;
+        for (std::size_t length=body_length_; length!=0; length/=10, --p)
+            *p = (length % 10) + '0';
+        for (; p >= header_; --p)
+            *p = '0';
     }
 
   private:
-    std::vector<char> header_;
+    char              header_[4];
     std::vector<char> body_;
     std::size_t       body_length_;
 };

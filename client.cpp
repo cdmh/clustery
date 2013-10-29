@@ -95,23 +95,26 @@ class comms_client : public comms
     boost::system::error_code  error_code_;
 };
 
-
-void client(char const *hostname, int port)
+void client(boost::asio::io_service &io_service, char const *hostname, int port, char const *node)
 {
-    std::cout << "\nClustery client\n===============\n";
-
-    boost::asio::io_service io_service;
+    std::cout << "\nClustery client\n===============\n\nNode: " << node << "\n";
 
     auto endpoint_iterator = tcp::resolver(io_service).resolve({ hostname, boost::lexical_cast<std::string>(port).c_str() });
     comms_client c(io_service, endpoint_iterator);
-    std::thread t([&io_service](){ io_service.run(); });
 
     std::cout << "\nConnecting...";
     while (!c.error_code()  &&  !c.connected())
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-    if (!c.error_code())
-        std::cout << "\nConnected.\n";
+    if (c.error_code())
+    {
+        std::cout << '\n' << c.error();
+        return;
+    }
+
+    std::cout << "\nConnected.\n";
+    message msg(std::string("member-join: ") + node);
+    c.write(msg);
 
     std::string line;
     while (!c.error_code()  &&  getline(std::cin, line))
@@ -124,10 +127,6 @@ void client(char const *hostname, int port)
     }
 
     c.close();
-    t.join();
-
-    if (c.error_code())
-        throw std::runtime_error(c.error());
 }
 
 }   // namespace clustery
