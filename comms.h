@@ -9,7 +9,7 @@ class comms
       : socket_(std::forward<tcp::socket>(socket))
     { }
 
-    void perform_read(std::function<void ()> on_success, std::function<void ()> on_error)
+    void perform_read(std::function<void ()> on_success, std::function<void (boost::system::error_code ec)> on_error)
     {
         boost::asio::async_read(
             socket_,
@@ -19,11 +19,11 @@ class comms
                 if (!ec)
                     read_body(on_success, on_error);
                 else
-                    on_error();
+                    on_error(ec);
             });
     }
 
-    void perform_write(std::function<void ()> on_success, std::function<void ()> on_error)
+    void perform_write(std::function<void ()> on_success, std::function<void (boost::system::error_code ec)> on_error)
     {
         boost::asio::async_write(
             socket_,
@@ -31,7 +31,7 @@ class comms
             [this, on_success, on_error](boost::system::error_code ec, std::size_t /*length*/)
             {
                 if (ec)
-                    on_error();
+                    on_error(ec);
                 else
                     write_body(on_success, on_error);
             });
@@ -40,7 +40,7 @@ class comms
   private:
     void read_body(
         std::function<void ()> on_success,
-        std::function<void ()> on_error)
+        std::function<void (boost::system::error_code ec)> on_error)
     {
         boost::asio::async_read(
             socket_,
@@ -48,13 +48,13 @@ class comms
             [this, on_success, on_error](boost::system::error_code ec, std::size_t /*length*/)
             {
                 if (ec)
-                    on_error();
+                    on_error(ec);
                 else
                     on_success();
             });
     }
 
-    void write_body(std::function<void ()> on_success, std::function<void ()> on_error)
+    void write_body(std::function<void ()> on_success, std::function<void (boost::system::error_code ec)> on_error)
     {
         boost::asio::async_write(
             socket_,
@@ -62,7 +62,7 @@ class comms
             [this, on_success, on_error](boost::system::error_code ec, std::size_t /*length*/)
             {
                 if (ec)
-                    on_error();
+                    on_error(ec);
                 else
                 {
                     write_msgs_.pop_front();

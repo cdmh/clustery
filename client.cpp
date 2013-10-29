@@ -73,14 +73,20 @@ class comms_client : public comms
                 std::cout << "\n";
                 read();
             },
-            [this]() { socket_.close(); });
+            [this](boost::system::error_code ec) {
+                socket_.close();
+                error_code_ = ec;
+            });
     }
 
     void write()
     {
         perform_write(
             [this]() { write(); },
-            [this]() { socket_.close(); });
+            [this](boost::system::error_code ec) {
+                socket_.close();
+                error_code_ = ec;
+            });
     }
 
   private:
