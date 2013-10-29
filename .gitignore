@@ -13,3 +13,4 @@
 *.a
 *.suo
 bin/*
+*.user

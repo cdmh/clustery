@@ -1,22 +1,14 @@
 #include "stdafx.h"
-#include <cstdlib>
-#include <deque>
-#include <iostream>
-#include <list>
-#include <memory>
-#include <set>
-#include <utility>
-#include <boost/asio.hpp>
-#include <atomic>
 #include "message.h"
+#include "comms.h"
 
-using boost::asio::ip::tcp;
+namespace clustery {
 
 class cluster_member
 {
-public:
-  virtual ~cluster_member() {}
-  virtual void deliver(message const &msg) = 0;
+  public:
+    virtual ~cluster_member() {}
+    virtual void deliver(message const &msg) = 0;
 };
 
 typedef std::shared_ptr<cluster_member> cluster_member_ptr;
@@ -177,3 +169,5 @@ void server(int *ports, int num_ports)
         std::cerr << "Exception: " << e.what() << "\n";
     }
 }
+
+}   // namespace clustery

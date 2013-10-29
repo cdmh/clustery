@@ -1,11 +1,8 @@
 #include "stdafx.h"
-#include <cstdlib>
-#include <deque>
-#include <iostream>
-#include <thread>
-#include <boost/asio.hpp>
-#include <boost/lexical_cast.hpp>
 #include "message.h"
+#include "comms.h"
+
+namespace clustery {
 
 class comms_client : public comms
 {
@@ -97,3 +94,5 @@ void client(char const *hostname, int port)
         std::cerr << "Exception: " << e.what() << "\n";
     }
 }
+
+}   // namespace clustery
