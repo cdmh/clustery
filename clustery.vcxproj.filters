@@ -24,13 +24,13 @@
     <ClInclude Include="comms.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="server.session.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="server.cluster.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="comms_client.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="server.session.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -41,18 +41,18 @@
     <ClCompile Include="clustery.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="server.cpp">
+    <ClCompile Include="comms_client.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="comms_client.cpp">
+    <ClCompile Include="comms_server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="server.session.inl">
+    <None Include="server.cluster.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="server.cluster.inl">
+    <None Include="server.session.inl">
       <Filter>Header Files</Filter>
     </None>
   </ItemGroup>

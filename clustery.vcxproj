@@ -157,7 +157,7 @@
   <ItemGroup>
     <ClCompile Include="comms_client.cpp" />
     <ClCompile Include="clustery.cpp" />
-    <ClCompile Include="server.cpp" />
+    <ClCompile Include="comms_server.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
