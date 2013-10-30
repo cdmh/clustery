@@ -113,7 +113,7 @@ void client(boost::asio::io_service &io_service, char const *hostname, int port,
     }
 
     std::cout << "\nConnected.\n";
-    message msg(std::string("member-join: ") + node);
+    message msg(std::string("join-cluster: ") + node);
     c.write(msg);
 
     std::string line;
