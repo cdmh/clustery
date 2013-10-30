@@ -12,7 +12,9 @@ class comms_client : public comms
   private:
     void connect(tcp::resolver::iterator endpoint_iterator);
     void message_loop();
+    void join_cluster();
     void read();
+    void run_message_loop();
     void write();
     void write(message const &msg);
 

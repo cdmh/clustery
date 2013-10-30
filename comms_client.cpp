@@ -29,36 +29,6 @@ void comms_client::close()
     io_service_.post([this]() { socket_.close(); });
 }
 
-void comms_client::write(message const &msg)
-{
-    io_service_.post(
-        [this, msg]() {
-            bool write_in_progress = !write_msgs_.empty();
-            write_msgs_.push_back(msg);
-            if (!write_in_progress)
-                write();
-        });
-}
-
-void comms_client::message_loop()
-{
-    std::clog << "\nConnected.\n";
-    std::ostringstream msgtxt;
-    msgtxt << "join-cluster: " << hostname_ << ":" << clustery::port << " (" << node_ << ")";
-    message msg(msgtxt.str());
-    write(msg);
-
-    std::string line;
-    while (!error_code_  &&  getline(std::cin, line))
-    {
-        if (!error_code_)
-        {
-            message msg(line);
-            write(msg);
-        }
-    }
-}
-
 void comms_client::connect(tcp::resolver::iterator endpoint_iterator)
 {
     boost::asio::async_connect(
@@ -73,10 +43,33 @@ void comms_client::connect(tcp::resolver::iterator endpoint_iterator)
             }
             else
             {
-                message_loop_ = std::thread(std::bind(&comms_client::message_loop, this));
+                std::clog << "\nConnected.\n";
+                join_cluster();
+                run_message_loop();
                 read();
             }
         });
+}
+
+void comms_client::join_cluster()
+{
+    std::ostringstream msgtxt;
+    msgtxt << "join-cluster: " << hostname_ << ":" << clustery::port << " (" << node_ << ")";
+    message msg(msgtxt.str());
+    write(msg);
+}
+
+void comms_client::message_loop()
+{
+    std::string line;
+    while (!error_code_  &&  getline(std::cin, line))
+    {
+        if (!error_code_)
+        {
+            message msg(line);
+            write(msg);
+        }
+    }
 }
 
 void comms_client::read()
@@ -93,6 +86,11 @@ void comms_client::read()
         });
 }
 
+void comms_client::run_message_loop()
+{
+    message_loop_ = std::thread(std::bind(&comms_client::message_loop, this));
+}
+
 void comms_client::write()
 {
     perform_write(
@@ -100,6 +98,17 @@ void comms_client::write()
         [this](boost::system::error_code ec) {
             error_code_ = ec;
             socket_.close();
+        });
+}
+
+void comms_client::write(message const &msg)
+{
+    io_service_.post(
+        [this, msg]() {
+            bool write_in_progress = !write_msgs_.empty();
+            write_msgs_.push_back(msg);
+            if (!write_in_progress)
+                write();
         });
 }
 
