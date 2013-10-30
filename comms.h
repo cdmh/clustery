@@ -81,9 +81,9 @@ class comms
     }
 
   protected:
-    tcp::socket     socket_;
-    message         read_msg_;
-    message_queue_t write_msgs_;
+    tcp::socket           socket_;
+    message::generic_text read_msg_;
+    message::queue_t      write_msgs_;
 };
 
 }   // namespace clustery

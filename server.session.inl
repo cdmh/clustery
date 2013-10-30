@@ -1,6 +1,6 @@
 namespace clustery {
 
-void session::deliver(message const &msg)
+void session::deliver(message::generic_text const &msg)
 {
     bool write_in_progress = !write_msgs_.empty();
     write_msgs_.push_back(msg);

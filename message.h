@@ -1,25 +1,32 @@
 namespace clustery {
 
-class message
+namespace message {
+
+// TODO detect and support endianness. Currently, all systems in the cluster must be the same endianness
+class generic_text
 {
   public:
-    message(std::size_t length=0)
-      : body_length_(length)      
+    static std::uint16_t const message_type_id = 1;
+
+    generic_text(std::uint32_t length=0)
+      : head({message_type_id, length})
     {
-        body_.resize(body_length_);
+        if (head.body_length_ > 0)
+            body_.resize(head.body_length_);
     }
 
-    message(std::string const &msg) : message(msg.length())
+    generic_text(std::string &&msg, std::uint16_t const id=message_type_id)
+        : generic_text((std::uint32_t)msg.length())
     {
-        if (body_length_ > 0)
-            std::memcpy(&body_[0], msg.c_str(), body_length_);
-        encode_header();
+        head.msg_id_ = id;
+        if (head.body_length_ > 0)
+            std::memcpy(&body_[0], msg.c_str(), head.body_length_);
     }
 
     boost::asio::mutable_buffers_1 body_buffer()
     {
         decode_header();
-        return boost::asio::buffer(body_, body_length_);
+        return boost::asio::buffer(body_, head.body_length_);
     }
 
     boost::asio::mutable_buffers_1 header_buffer()
@@ -33,38 +40,59 @@ class message
         return (body_.size() == 0)? "" : &body_[0];
     }
 
-    std::size_t const body_length() const
+    std::uint32_t const body_length() const
     {
-        return body_length_;
+        return head.body_length_;
     }
 
   private:
     bool const decode_header()
     {
-        body_length_ = 0;
-        for (int loop=0; loop<sizeof(header_); ++loop)
-            body_length_ = (body_length_ * 10) + (header_[loop] - '0');
-
-        if (body_length_ > body_.size())
-            body_.resize(body_length_);
+        if (head.body_length_ > body_.size())
+            body_.resize(head.body_length_);
         return true;
     }
 
-    void encode_header()
+  private:
+    struct header {
+        // this struct uses fixed size types for
+        // interoperability between 32/64 systems
+        std::uint16_t msg_id_;
+        std::uint32_t body_length_;
+    };
+    union {
+        header head;
+        char   header_[sizeof(header)];
+    };
+    std::vector<char> body_;
+};
+
+class join_cluster
+{
+  public:
+    static std::uint16_t const message_type_id = 2;
+
+    join_cluster(char const *hostname, int port, char const *node)
+      : hostname_(hostname), port_(port), node_(node)
     {
-        char *p = header_ + sizeof(header_) - 1;
-        for (std::size_t length=body_length_; length!=0; length/=10, --p)
-            *p = (length % 10) + '0';
-        for (; p >= header_; --p)
-            *p = '0';
+    }
+
+    operator generic_text() const
+    {
+        std::ostringstream msgtxt;
+        msgtxt << "join-cluster: " << hostname_ << ":" << port_ << " (" << node_ << ")";
+        return generic_text(msgtxt.str(), message_type_id);
     }
 
   private:
-    char              header_[4];
-    std::vector<char> body_;
-    std::size_t       body_length_;
+    int         port_;
+    char const *hostname_;
+    char const *node_;
 };
 
-typedef std::deque<message> message_queue_t;
+typedef std::deque<generic_text> queue_t;
+
+}   // namespace message
+
 
 }   //  namespace clustery

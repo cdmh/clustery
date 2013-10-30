@@ -53,10 +53,7 @@ void comms_client::connect(tcp::resolver::iterator endpoint_iterator)
 
 void comms_client::join_cluster()
 {
-    std::ostringstream msgtxt;
-    msgtxt << "join-cluster: " << hostname_ << ":" << clustery::port << " (" << node_ << ")";
-    message msg(msgtxt.str());
-    write(msg);
+    write(message::join_cluster(hostname_, clustery::port, node_));
 }
 
 void comms_client::message_loop()
@@ -65,10 +62,7 @@ void comms_client::message_loop()
     while (!error_code_  &&  getline(std::cin, line))
     {
         if (!error_code_)
-        {
-            message msg(line);
-            write(msg);
-        }
+            write(message::generic_text(std::move(line)));
     }
 }
 
@@ -101,7 +95,7 @@ void comms_client::write()
         });
 }
 
-void comms_client::write(message const &msg)
+void comms_client::write(message::generic_text &&msg)
 {
     io_service_.post(
         [this, msg]() {

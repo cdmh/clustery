@@ -16,7 +16,7 @@ class comms_client : public comms
     void read();
     void run_message_loop();
     void write();
-    void write(message const &msg);
+    void write(message::generic_text &&msg);
 
   private:
     char const * const         node_;

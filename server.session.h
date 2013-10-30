@@ -6,12 +6,12 @@ class session
     public std::enable_shared_from_this<session>
 {
   public:
-    session(tcp::socket &&socket, cluster &room)
+    session(tcp::socket &&socket, cluster &c)
       : comms(std::forward<tcp::socket>(socket)),
-        cluster_(room)
+        cluster_(c)
     { }
 
-    void deliver(message const &msg);
+    void deliver(message::generic_text const &msg);
     void start();
 
   private:

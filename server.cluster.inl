@@ -7,7 +7,7 @@ cluster::cluster(std::size_t const recent_msg_count)
 {
 }
 
-void cluster::deliver(message const &msg, session_ptr from)
+void cluster::deliver(message::generic_text const &msg, session_ptr from)
 {
     std::clog << "\nRoom " << cluster_number_ << ", received message " << ++message_count_ << "\n--> ";
     std::clog.write(msg.body(), msg.body_length());
