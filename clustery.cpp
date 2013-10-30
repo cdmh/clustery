@@ -29,7 +29,7 @@ bool termination_requested = false;
 boost::asio::io_service io_service;
 
 #ifdef _MSC_VER
-BOOL sigintHandler(DWORD sig_num)
+BOOL __stdcall sigintHandler(DWORD sig_num)
 #else
 void sigintHandler(int sig_num)
 #endif

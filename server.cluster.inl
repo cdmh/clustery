@@ -1,6 +1,6 @@
 namespace clustery {
 
-cluster::cluster(int const recent_msg_count)
+cluster::cluster(std::size_t const recent_msg_count)
   : recent_msg_count_(recent_msg_count),
     message_count_(0),
     cluster_number_(++cluster_count_)
