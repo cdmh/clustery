@@ -7,7 +7,7 @@ cluster::cluster(int const recent_msg_count)
 {
 }
 
-void cluster::deliver(message const &msg)
+void cluster::deliver(message const &msg, session_ptr from)
 {
     std::clog << "\nRoom " << cluster_number_ << ", received message " << ++message_count_ << "\n--> ";
     std::clog.write(msg.body(), msg.body_length());
@@ -19,10 +19,11 @@ void cluster::deliver(message const &msg)
         recent_msgs_.pop_front();
 
     for (auto member : members_)
-        member->deliver(msg);
+        if (member != from)
+            member->deliver(msg);
 }
 
-void cluster::join(cluster_member_ptr member)
+void cluster::join(session_ptr member)
 {
     members_.insert(member);
     std::clog << "\nServer joined. Now " << members_.size();
@@ -30,7 +31,7 @@ void cluster::join(cluster_member_ptr member)
         member->deliver(msg);
 }
 
-void cluster::leave(cluster_member_ptr member)
+void cluster::leave(session_ptr member)
 {
     members_.erase(member);
     std::clog << "\nServer left. Now " << members_.size();

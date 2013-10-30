@@ -2,10 +2,11 @@
 #include <boost/asio.hpp>
 #include <boost/lexical_cast.hpp>
 #include <iostream>
+#include "comms_client.h"
+#include "n3588.h"
 
 namespace clustery {
 
-void client(char const *node, boost::asio::io_service &io_service, char const *hostname, int port);
 void server(boost::asio::io_service &io_service, int *ports, int num_ports);
 
 #define STRINGIFY(a) STRINGIFY_(a)
@@ -16,8 +17,8 @@ int port = PORT;
 
 void help()
 {
-    std::cout << "\nUsage: clustery [--peer-node=...] [--peer-port=...][--node=...] [--port=port]";
-    std::cout << "\n\nDefault port is " << PORT;
+    std::cerr << "\nUsage: clustery [--peer-node=...] [--peer-port=...][--node=...] [--port=port]";
+    std::cerr << "\n\nDefault port is " << PORT;
 }
 
 }   // namespace clustery
@@ -63,8 +64,8 @@ int main(int argc, char *argv[])
         char hostname[256];
         gethostname(hostname, sizeof(hostname));
 
-        bool show_help = false;
-        char const *node  = hostname;
+        bool        show_help = false;
+        char const *node      = hostname;
         char const *peer_node = nullptr;
         int         peer_port = PORT;
         for (int loop=1; loop<argc; ++loop)
@@ -94,8 +95,11 @@ int main(int argc, char *argv[])
         std::cout << "\nClustery\n========\n";
         std::cout << "\nThis node (--node)     : " << node;
         std::cout << "\nThis port (--port)     : " << clustery::port;
-        std::cout << "\nPeer node (--peer-node): " << (peer_node? peer_node : "");
-        std::cout << "\nPeer port (--peer-port): " << peer_port;
+        if (peer_node)
+        {
+            std::cout << "\nPeer node (--peer-node): " << peer_node;
+            std::cout << "\nPeer port (--peer-port): " << peer_port;
+        }
         std::cout << "\n";
 
         if (show_help)
@@ -108,13 +112,11 @@ int main(int argc, char *argv[])
         std::thread t = std::thread([](){ io_service.run(); });
         clustery::server(io_service, &clustery::port, 1);
 
+        std::unique_ptr<clustery::comms_client> client;
         if (peer_node)
-        {
-            clustery::client(node, io_service, peer_node, peer_port);
-            io_service.stop();
-        }
+            client = n3588::make_unique<clustery::comms_client>(node, io_service, hostname, peer_port);
         else
-            std::cout << "\nStarting a new cluster.";
+            std::clog << "\nStarting a new cluster.";
 
         t.join();
     }

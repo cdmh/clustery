@@ -22,6 +22,6 @@ class session
   private:
     cluster &cluster_;
 };
-typedef std::shared_ptr<session> cluster_member_ptr;
+typedef std::shared_ptr<session> session_ptr;
 
 }   // namespace clustery

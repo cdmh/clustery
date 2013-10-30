@@ -1,3 +1,5 @@
+#include "message.h"
+
 namespace clustery {
 
 using boost::asio::ip::tcp;
@@ -9,21 +11,25 @@ class comms
       : socket_(std::forward<tcp::socket>(socket))
     { }
 
-    void perform_read(std::function<void ()> on_success, std::function<void (boost::system::error_code ec)> on_error)
+    void perform_read(
+        std::function<void ()> on_success,
+        std::function<void (boost::system::error_code ec)> on_error)
     {
         boost::asio::async_read(
             socket_,
             read_msg_.header_buffer(),
             [this, on_success, on_error](boost::system::error_code ec, std::size_t /*length*/)
             {
-                if (!ec)
-                    read_body(on_success, on_error);
-                else
+                if (ec)
                     on_error(ec);
+                else
+                    read_body(on_success, on_error);
             });
     }
 
-    void perform_write(std::function<void ()> on_success, std::function<void (boost::system::error_code ec)> on_error)
+    void perform_write(
+        std::function<void ()> on_success,
+        std::function<void (boost::system::error_code ec)> on_error)
     {
         boost::asio::async_write(
             socket_,
@@ -54,7 +60,9 @@ class comms
             });
     }
 
-    void write_body(std::function<void ()> on_success, std::function<void (boost::system::error_code ec)> on_error)
+    void write_body(
+        std::function<void ()> on_success,
+        std::function<void (boost::system::error_code ec)> on_error)
     {
         boost::asio::async_write(
             socket_,

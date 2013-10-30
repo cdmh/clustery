@@ -12,7 +12,7 @@ void session::read()
 {
     perform_read(
         [this](){
-            cluster_.deliver(read_msg_);
+            cluster_.deliver(read_msg_, shared_from_this());
             read();
         },
         std::bind(&cluster::leave, &cluster_, shared_from_this()));

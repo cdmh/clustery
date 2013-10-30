@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include "message.h"
 #include "comms.h"
 
 #include "server.session.h"
@@ -25,7 +24,9 @@ class comms_server
         acceptor_.async_accept(socket_,
             [this](boost::system::error_code ec)
             {
-                if (!ec)
+                if (ec)
+                    std::cerr << ec.message();
+                else
                     std::make_shared<session>(std::move(socket_), cluster_)->start();
 
                 accept();

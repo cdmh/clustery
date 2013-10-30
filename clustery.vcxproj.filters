@@ -30,6 +30,9 @@
     <ClInclude Include="server.cluster.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="comms_client.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -41,7 +44,7 @@
     <ClCompile Include="server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="client.cpp">
+    <ClCompile Include="comms_client.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

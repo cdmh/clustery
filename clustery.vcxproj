@@ -147,6 +147,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="comms_client.h" />
     <ClInclude Include="comms.h" />
     <ClInclude Include="message.h" />
     <ClInclude Include="server.cluster.h" />
@@ -154,7 +155,7 @@
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="client.cpp" />
+    <ClCompile Include="comms_client.cpp" />
     <ClCompile Include="clustery.cpp" />
     <ClCompile Include="server.cpp" />
     <ClCompile Include="stdafx.cpp">
