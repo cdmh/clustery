@@ -5,16 +5,19 @@
 
 namespace clustery {
 
-void client(boost::asio::io_service &io_service, char const *hostname, int port, char const *node);
+void client(char const *node, boost::asio::io_service &io_service, char const *hostname, int port);
 void server(boost::asio::io_service &io_service, int *ports, int num_ports);
 
-int const PORT = 52900;
-int       port = PORT;
+#define STRINGIFY(a) STRINGIFY_(a)
+#define STRINGIFY_(a) #a
+
+#define PORT 52900
+int port = PORT;
 
 void help()
 {
-    std::cout << "\nUsage: clustery [--client] [port]";
-    std::cout << "\n\nDefault port is " << port;
+    std::cout << "\nUsage: clustery [--peer-node=...] [--peer-port=...][--node=...] [--port=port]";
+    std::cout << "\n\nDefault port is " << PORT;
 }
 
 }   // namespace clustery
@@ -57,33 +60,61 @@ int main(int argc, char *argv[])
 
     try
     {
-        bool client = false;
-        char const *node = "local";
+        char hostname[256];
+        gethostname(hostname, sizeof(hostname));
+
+        bool show_help = false;
+        char const *node  = hostname;
+        char const *peer_node = nullptr;
+        int         peer_port = PORT;
         for (int loop=1; loop<argc; ++loop)
         {
             if (strcmp(argv[loop], "--help") == 0)
-            {
                 clustery::help();
-                return 0;
-            }
-            else if (strcmp(argv[loop], "--client") == 0)
-                client = true;
             else if (strncmp(argv[loop], "--node=", 7) == 0)
                 node = &argv[loop][7];
+            else if (strncmp(argv[loop], "--port=", 7) == 0)
+            {
+                clustery::port = (unsigned short)std::atoi(&argv[loop][7]);
+                if (boost::lexical_cast<std::string>(clustery::port) != &argv[loop][7])
+                    show_help = true;
+            }
+            else if (strncmp(argv[loop], "--peer-node=", 12) == 0)
+                peer_node = &argv[loop][12];
+            else if (strncmp(argv[loop], "--peer-port=", 12) == 0)
+            {
+                peer_port = (unsigned short)std::atoi(&argv[loop][12]);
+                if (boost::lexical_cast<std::string>(peer_port) != &argv[loop][12])
+                    show_help = true;
+            }
             else
-                clustery::port = (unsigned short)std::atoi(argv[loop]);
+                show_help = true;
         }
 
-        
+        std::cout << "\nClustery\n========\n";
+        std::cout << "\nThis node (--node)     : " << node;
+        std::cout << "\nThis port (--port)     : " << clustery::port;
+        std::cout << "\nPeer node (--peer-node): " << (peer_node? peer_node : "");
+        std::cout << "\nPeer port (--peer-port): " << peer_port;
+        std::cout << "\n";
+
+        if (show_help)
+        {
+            clustery::help();
+            return 0;
+        }
+
         boost::asio::io_service::work work(io_service);
         std::thread t = std::thread([](){ io_service.run(); });
-        if (client)
+        clustery::server(io_service, &clustery::port, 1);
+
+        if (peer_node)
         {
-            clustery::client(io_service, "localhost", clustery::port, node);
+            clustery::client(node, io_service, peer_node, peer_port);
             io_service.stop();
         }
         else
-            clustery::server(io_service, &clustery::port, 1);
+            std::cout << "\nStarting a new cluster.";
 
         t.join();
     }

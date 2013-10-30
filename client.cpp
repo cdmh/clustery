@@ -95,14 +95,12 @@ class comms_client : public comms
     boost::system::error_code  error_code_;
 };
 
-void client(boost::asio::io_service &io_service, char const *hostname, int port, char const *node)
+void client(char const *node, boost::asio::io_service &io_service, char const *hostname, int port)
 {
-    std::cout << "\nClustery client\n===============\n\nNode: " << node << "\n";
-
     auto endpoint_iterator = tcp::resolver(io_service).resolve({ hostname, boost::lexical_cast<std::string>(port).c_str() });
     comms_client c(io_service, endpoint_iterator);
 
-    std::cout << "\nConnecting...";
+    std::cout << "\nConnecting to " << hostname << ":" << port << " ...";
     while (!c.error_code()  &&  !c.connected())
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
@@ -113,7 +111,9 @@ void client(boost::asio::io_service &io_service, char const *hostname, int port,
     }
 
     std::cout << "\nConnected.\n";
-    message msg(std::string("join-cluster: ") + node);
+    std::ostringstream msgtxt;
+    msgtxt << "join-cluster: " << hostname << ":" << port << " (" << node << ")";
+    message msg(msgtxt.str());
     c.write(msg);
 
     std::string line;

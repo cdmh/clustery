@@ -41,12 +41,12 @@ class comms_server
 
 void server(boost::asio::io_service &io_service, int *ports, int num_ports)
 {
-    std::cout << "\nClustery server\n===============\nRunning ...";
     try
     {
         static std::list<comms_server> servers;
         for (int i=0; i < num_ports; ++i)
         {
+            std::cout << "\nListening on port " << ports[i];
             tcp::endpoint endpoint(tcp::v4(), ports[i]);
             servers.emplace_back(io_service, endpoint);
         }
