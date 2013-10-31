@@ -12,7 +12,9 @@ void session::read()
 {
     perform_read(
         [this](){
-            cluster_.deliver(read_msg_, shared_from_this());
+            // we're done with the message, so move it to
+            // the cluster to prevent memory allocations
+            cluster_.deliver(std::move(read_msg_), shared_from_this());
             read();
         },
         std::bind(&cluster::leave, &cluster_, shared_from_this()));

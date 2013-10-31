@@ -25,6 +25,11 @@ class generic_text
             std::memcpy(&body_[0], msg.c_str(), head.body_length_);
     }
 
+    generic_text(generic_text &&other) : body_(std::move(other.body_))
+    {
+        memcpy(header_, other.header_, sizeof(header_));
+    }
+
     boost::asio::mutable_buffers_1 body_buffer()
     {
         decode_header();

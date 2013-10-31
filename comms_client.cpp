@@ -3,7 +3,7 @@
 
 namespace clustery {
 
-extern int port;
+extern unsigned short port;
 
 comms_client::comms_client(char const *node, boost::asio::io_service &io_service, char const *hostname, int port)
     : comms(tcp::socket(io_service)),

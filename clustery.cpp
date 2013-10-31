@@ -7,13 +7,13 @@
 
 namespace clustery {
 
-void server(boost::asio::io_service &io_service, int *ports, int num_ports);
+void server(boost::asio::io_service &io_service, unsigned short *ports, int num_ports);
 
 #define STRINGIFY(a) STRINGIFY_(a)
 #define STRINGIFY_(a) #a
 
 #define PORT 52900
-int port = PORT;
+unsigned short port = PORT;
 
 void help()
 {
@@ -29,7 +29,7 @@ bool termination_requested = false;
 boost::asio::io_service io_service;
 
 #ifdef _MSC_VER
-BOOL __stdcall sigintHandler(DWORD sig_num)
+BOOL __stdcall sigintHandler(DWORD /*sig_num*/)
 #else
 void sigintHandler(int sig_num)
 #endif
@@ -64,19 +64,19 @@ int main(int argc, char *argv[])
         char hostname[256];
         gethostname(hostname, sizeof(hostname));
 
-        bool        show_help = false;
-        char const *node      = hostname;
-        char const *peer_node = nullptr;
-        int         peer_port = PORT;
+        bool           show_help = false;
+        char const    *node      = hostname;
+        char const    *peer_node = nullptr;
+        unsigned short peer_port = PORT;
         for (int loop=1; loop<argc; ++loop)
         {
             if (strcmp(argv[loop], "--help") == 0)
-                clustery::help();
+                show_help = true;
             else if (strncmp(argv[loop], "--node=", 7) == 0)
                 node = &argv[loop][7];
             else if (strncmp(argv[loop], "--port=", 7) == 0)
             {
-                clustery::port = std::atoi(&argv[loop][7]);
+                clustery::port = (unsigned short)std::atoi(&argv[loop][7]);
                 if (boost::lexical_cast<std::string>(clustery::port) != &argv[loop][7])
                     show_help = true;
             }
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
                 peer_node = &argv[loop][12];
             else if (strncmp(argv[loop], "--peer-port=", 12) == 0)
             {
-                peer_port = std::atoi(&argv[loop][12]);
+                peer_port = (unsigned short)std::atoi(&argv[loop][12]);
                 if (boost::lexical_cast<std::string>(peer_port) != &argv[loop][12])
                     show_help = true;
             }

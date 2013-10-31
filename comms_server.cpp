@@ -13,7 +13,8 @@ class comms_server
   public:
     comms_server(boost::asio::io_service &io_service, const tcp::endpoint &endpoint)
     : acceptor_(io_service, endpoint),
-      socket_(io_service)
+      socket_(io_service),
+      cluster_(io_service)
     {
         accept();
     }
@@ -40,7 +41,7 @@ class comms_server
 };
 
 
-void server(boost::asio::io_service &io_service, int *ports, int num_ports)
+void server(boost::asio::io_service &io_service, unsigned short *ports, int num_ports)
 {
     try
     {
