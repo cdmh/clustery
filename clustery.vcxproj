@@ -153,6 +153,7 @@
     <ClInclude Include="server.cluster.h" />
     <ClInclude Include="server.session.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="string_view.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="comms_client.cpp" />

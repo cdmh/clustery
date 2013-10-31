@@ -9,18 +9,32 @@ cluster::cluster(std::size_t const recent_msg_count)
 
 void cluster::deliver(message::generic_text const &msg, session_ptr from)
 {
-    std::clog << "\nRoom " << cluster_number_ << ", received message " << ++message_count_ << "\n--> ";
-    std::clog.write(msg.body(), msg.body_length());
+    std::clog << "\nCluster " << cluster_number_ << ", received message " << ++message_count_;
 
-    // store the message for sending to new servers
-    // as they join the cluster
+    switch (msg.id())
+    {
+        case message::join_cluster::message_type_id:
+        {
+            message::join_cluster join;
+            if (!join.decode(msg.body(), msg.body_length()))
+                throw std::runtime_error("Message decode failed.");
+            std::cout << "\n==> "; std::cout.write(msg.body(), msg.body_length());
+            std::cout << "\n--> " << join;
+            break;
+        }
+    }
+
+    // store the message for sending to new servers as they join the cluster
     recent_msgs_.push_back(msg);
     while (recent_msgs_.size() > recent_msg_count_)
         recent_msgs_.pop_front();
 
+    // deliver the message to all other servers in the cluster
     for (auto member : members_)
+    {
         if (member != from)
             member->deliver(msg);
+    }
 }
 
 void cluster::join(session_ptr member)

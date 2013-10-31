@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
                 node = &argv[loop][7];
             else if (strncmp(argv[loop], "--port=", 7) == 0)
             {
-                clustery::port = (unsigned short)std::atoi(&argv[loop][7]);
+                clustery::port = std::atoi(&argv[loop][7]);
                 if (boost::lexical_cast<std::string>(clustery::port) != &argv[loop][7])
                     show_help = true;
             }
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
                 peer_node = &argv[loop][12];
             else if (strncmp(argv[loop], "--peer-port=", 12) == 0)
             {
-                peer_port = (unsigned short)std::atoi(&argv[loop][12]);
+                peer_port = std::atoi(&argv[loop][12]);
                 if (boost::lexical_cast<std::string>(peer_port) != &argv[loop][12])
                     show_help = true;
             }

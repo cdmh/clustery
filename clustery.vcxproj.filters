@@ -33,6 +33,9 @@
     <ClInclude Include="server.session.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="string_view.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
