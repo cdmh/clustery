@@ -104,7 +104,7 @@ void comms_client::write()
         });
 }
 
-void comms_client::write(message::generic_text &&msg)
+void comms_client::write(message::generic_text msg)
 {
     io_service_.post(
         [this, msg]() {

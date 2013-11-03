@@ -22,7 +22,7 @@ class comms_client : public comms
     void read();
     void run_message_loop();
     void write();
-    void write(message::generic_text &&msg);
+    void write(message::generic_text msg);
 
   private:
     char const *         const hostname_;
