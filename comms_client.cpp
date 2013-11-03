@@ -3,17 +3,22 @@
 
 namespace clustery {
 
-extern unsigned short port;
-
-comms_client::comms_client(char const *node, boost::asio::io_service &io_service, char const *hostname, int port)
-    : comms(tcp::socket(io_service)),
-    node_(node),
+comms_client::comms_client(
+    char const              *hostname,
+    char const              *nodename,
+    unsigned short           port,
+    boost::asio::io_service &io_service,
+    char const              *peer_node,
+    unsigned short           peer_port)
+  : comms(tcp::socket(io_service)),
     hostname_(hostname),
+    nodename_(nodename),
+    port_(port),
+    peer_node_(peer_node),
+    peer_port_(peer_port),
     io_service_(io_service)
 {
-    std::clog << "\nConnecting to " << hostname << ":" << port << " ...";
-    auto endpoint_iterator = tcp::resolver(io_service).resolve({ hostname, boost::lexical_cast<std::string>(port).c_str() });
-    connect(endpoint_iterator);
+    connect();
 }
 
 comms_client::~comms_client()
@@ -29,8 +34,11 @@ void comms_client::close()
     io_service_.post([this]() { socket_.close(); });
 }
 
-void comms_client::connect(tcp::resolver::iterator endpoint_iterator)
+void comms_client::connect()
 {
+    std::clog << "\nConnecting to " << peer_node_ << ":" << peer_port_ << " ...";
+    auto endpoint_iterator = tcp::resolver(io_service_).resolve({ peer_node_, boost::lexical_cast<std::string>(peer_port_).c_str() });
+
     boost::asio::async_connect(
         socket_,
         endpoint_iterator,
@@ -53,7 +61,7 @@ void comms_client::connect(tcp::resolver::iterator endpoint_iterator)
 
 void comms_client::join_cluster()
 {
-    write(message::join_cluster(hostname_, clustery::port, node_));
+    write(message::join_cluster(hostname_, port_, nodename_));
 }
 
 void comms_client::message_loop()
@@ -70,6 +78,7 @@ void comms_client::read()
 {
     perform_read(
         [this](){
+            std::cout << "==> ";
             std::cout.write(read_msg_.body(), read_msg_.body_length());
             std::cout << "\n";
             read();

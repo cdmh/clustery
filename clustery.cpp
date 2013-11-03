@@ -13,11 +13,10 @@ void server(boost::asio::io_service &io_service, unsigned short *ports, int num_
 #define STRINGIFY_(a) #a
 
 #define PORT 52900
-unsigned short port = PORT;
 
 void help()
 {
-    std::cerr << "\nUsage: clustery [--peer-node=...] [--peer-port=...][--node=...] [--port=port]";
+    std::cerr << "\nUsage: clustery [--peer-host=...] [--peer-port=...][--node=...] [--port=port]";
     std::cerr << "\n\nDefault port is " << PORT;
 }
 
@@ -59,29 +58,32 @@ int main(int argc, char *argv[])
     signal(SIGINT, sigintHandler);
 #endif
 
+    unsigned short port = PORT;
+    std::vector<std::thread> threads;
+
     try
     {
         char hostname[256];
         gethostname(hostname, sizeof(hostname));
 
         bool           show_help = false;
-        char const    *node      = hostname;
-        char const    *peer_node = nullptr;
+        char const    *nodename  = hostname;
+        char const    *peer_host = nullptr;
         unsigned short peer_port = PORT;
         for (int loop=1; loop<argc; ++loop)
         {
             if (strcmp(argv[loop], "--help") == 0)
                 show_help = true;
             else if (strncmp(argv[loop], "--node=", 7) == 0)
-                node = &argv[loop][7];
+                nodename = &argv[loop][7];
             else if (strncmp(argv[loop], "--port=", 7) == 0)
             {
-                clustery::port = (unsigned short)std::atoi(&argv[loop][7]);
-                if (boost::lexical_cast<std::string>(clustery::port) != &argv[loop][7])
+                port = (unsigned short)std::atoi(&argv[loop][7]);
+                if (boost::lexical_cast<std::string>(port) != &argv[loop][7])
                     show_help = true;
             }
-            else if (strncmp(argv[loop], "--peer-node=", 12) == 0)
-                peer_node = &argv[loop][12];
+            else if (strncmp(argv[loop], "--peer-host=", 12) == 0)
+                peer_host = &argv[loop][12];
             else if (strncmp(argv[loop], "--peer-port=", 12) == 0)
             {
                 peer_port = (unsigned short)std::atoi(&argv[loop][12]);
@@ -93,12 +95,13 @@ int main(int argc, char *argv[])
         }
 
         std::cout << "\nClustery\n========\n";
-        std::cout << "\nThis node (--node)     : " << node;
-        std::cout << "\nThis port (--port)     : " << clustery::port;
-        if (peer_node)
+        std::cout << "\nThis host            [--host]     : " << hostname;
+        std::cout << "\nThis node (nickname) [--node]     : " << nodename;
+        std::cout << "\nThis port            [--port]     : " << port;
+        if (peer_host)
         {
-            std::cout << "\nPeer node (--peer-node): " << peer_node;
-            std::cout << "\nPeer port (--peer-port): " << peer_port;
+            std::cout << "\nPeer host            [--peer-host]: " << peer_host;
+            std::cout << "\nPeer port            [--peer-port]: " << peer_port;
         }
         std::cout << "\n";
 
@@ -109,16 +112,28 @@ int main(int argc, char *argv[])
         }
 
         boost::asio::io_service::work work(io_service);
-        std::thread t = std::thread([](){ io_service.run(); });
-        clustery::server(io_service, &clustery::port, 1);
+        // create one less threads than there are CPU cores, but at least 1 thread
+#ifdef NDEBUG
+        unsigned max_threads = 999;
+#else
+        unsigned max_threads = 1;
+#endif
+        unsigned const num_threads = std::max(1U, std::min(max_threads, std::thread::hardware_concurrency() - 1U));
+        for (unsigned loop=0; loop<num_threads; ++loop)
+            threads.emplace_back([]{ io_service.run(); });
+        std::cout << "\nUsing " << num_threads << " threads";
+
+        clustery::server(io_service, &port, 1);
 
         std::unique_ptr<clustery::comms_client> client;
-        if (peer_node)
-            client = n3588::make_unique<clustery::comms_client>(node, io_service, hostname, peer_port);
+        if (peer_host)
+            client = n3588::make_unique<clustery::comms_client>(hostname, nodename, port, io_service, peer_host, peer_port);
         else
             std::clog << "\nStarting a new cluster.";
 
-        t.join();
+        for (auto &thread : threads)
+            if (thread.joinable())
+                thread.join();
     }
     catch (std::exception const &e)
     {
