@@ -13,7 +13,7 @@ class cluster
 
   private:
     boost::asio::io_service &io_service_;
-    std::size_t              message_count_;
+    std::atomic<std::size_t> message_count_;
     unsigned long            cluster_number_;
     std::set<session_ptr>    members_;
 

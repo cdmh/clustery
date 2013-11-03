@@ -12,11 +12,25 @@ void cluster::process_inbound_message(message::generic_text msg)
     // deliver the message to all other servers in the cluster
     for (auto member : members_)
     {
-        //if (member != from)
+        //if (member != from)       //!!!don't deliver back to the sender
             member->deliver(msg);
     }
 
-    std::clog << "\nCluster " << cluster_number_ << ", received message " << ++message_count_;
+    static auto last_time = std::chrono::system_clock::now();
+    std::size_t const count = ++message_count_;
+    if (count % 1000 == 0)
+    {
+        std::clog << "\nCluster "
+                  << cluster_number_
+                  << ", received message "
+                  << count
+                  << "\t"
+                  << std::chrono::duration_cast<
+                         std::chrono::milliseconds>(
+                             std::chrono::system_clock::now() - last_time).count();
+        last_time = std::chrono::system_clock::now();
+    }
+
     switch (msg.id())
     {
         case message::join_cluster::message_type_id:
